@@ -8,7 +8,7 @@
 #loaderScreen{position:fixed;top:0;left:0;width:100vw;height:100vh;background:linear-gradient(135deg,#74b9ff,#0984e3);display:flex;justify-content:center;align-items:center;flex-direction:column;color:#f0f0f0;font-size:28px;font-weight:700;z-index:1000;}
 .spinner{margin-top:20px;width:60px;height:60px;border:8px solid rgba(240,240,240,0.3);border-top:8px solid #f0f0f0;border-radius:50%;animation:spin 1.2s linear infinite;}
 @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
-body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#6dd5fa,#2980b9);color:#222;margin:0;padding:20px;display:flex;flex-direction:column;align-items:center;height:100vh;user-select:none;overflow:hidden;}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#6dd5fa,#2980b9);color:#222;margin:0;padding:20px;padding-top:40px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;height:100vh;user-select:none;overflow:hidden;}
 #board{display:grid;grid-template-columns:repeat(3,100px);grid-template-rows:repeat(3,100px);gap:10px;z-index:1;}
 .cell{background:#fff;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.15);font-size:72px;display:flex;justify-content:center;align-items:center;cursor:pointer;transition:background-color .3s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;}
 .cell:hover{background-color:#f0f8ff;}
@@ -23,7 +23,7 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
 <div id="loaderScreen">O'yin yuklanmoqda...<div class="spinner"></div></div>
 <div id="board"></div>
 <div id="message">Navbat: ❌</div>
-<button id="restartBtn">Qaytadan boshlash</button>
+<button id="restartBtn">Qayta boshlash</button>
 <canvas id="fireworksCanvas"></canvas>
 <script>
 window.onload=()=>{setTimeout(()=>{document.getElementById('loaderScreen').style.display='none';createBoard();},2500);}
@@ -43,7 +43,7 @@ function onCellClick(e){const index=e.target.dataset.index;if(!gameActive||board
 function updateBoard(){document.querySelectorAll('.cell').forEach(cell=>{const idx=cell.dataset.index;cell.textContent=board[idx];if(board[idx]!=='')cell.classList.add('disabled');});}
 function checkResult(){let roundWon=false;for(const condition of winningConditions){const[a,b,c]=condition;if(board[a]===''||board[b]===''||board[c]==='')continue;if(board[a]===board[b]&&board[b]===board[c]){roundWon=true;break;}}
 if(roundWon){messageElement.textContent=`G'olib: ${currentPlayer}! 🎉`;gameActive=false;highlightWinningCells();showFireworks();return;}
-if(!board.includes('')){messageElement.textContent='Durrang! 🤝';gameActive=false;return;}
+if(!board.includes('')){messageElement.textContent='Durang! 🤝';gameActive=false;return;}
 currentPlayer=currentPlayer==='❌'?'⭕':'❌';messageElement.textContent=`Navbat: ${currentPlayer}`;}
 function highlightWinningCells(){for(const condition of winningConditions){const[a,b,c]=condition;if(board[a]!==''&&board[a]===board[b]&&board[b]===board[c]){document.querySelector(`.cell[data-index="${a}"]`).style.backgroundColor='#90ee90';document.querySelector(`.cell[data-index="${b}"]`).style.backgroundColor='#90ee90';document.querySelector(`.cell[data-index="${c}"]`).style.backgroundColor='#90ee90';}}}
 restartBtn.addEventListener('click',()=>{board=['','','','','','','','',''];currentPlayer='❌';gameActive=true;messageElement.textContent=`Navbat: ${currentPlayer}`;createBoard();ctx.clearRect(0,0,canvas.width,canvas.height);fireworks=[];cancelAnimationFrame(animationId);});
