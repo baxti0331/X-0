@@ -2,129 +2,84 @@
 <html lang="uz">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Botga qarshi tik-tak-toe o'yini</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tik-Tak-Toe</title>
 <style>
-  #loaderScreen {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: linear-gradient(135deg, #74b9ff, #0984e3);
-    display: flex; justify-content: center; align-items: center; flex-direction: column;
-    color: #f0f0f0; font-size: 28px; font-weight: 700; z-index: 1000;
-  }
-  .spinner {
-    margin-top: 20px; width: 60px; height: 60px;
-    border: 8px solid rgba(240, 240, 240, 0.3);
-    border-top: 8px solid #f0f0f0; border-radius: 50%;
-    animation: spin 1.2s linear infinite;
-  }
-  @keyframes spin {
-    0% { transform: rotate(0deg);}
-    100% { transform: rotate(360deg);}
-  }
   body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #6dd5fa, #2980b9);
-    color: #222; margin: 0; padding: 20px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    height: 100vh; user-select: none; overflow: hidden;
+    margin: 0;
+    padding: 20px;
+    font-family: sans-serif;
+    background: linear-gradient(to right, #6dd5fa, #2980b9);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
   }
   #scoreboard {
-    color: white;
-    font-size: 24px;
-    font-weight: 600;
     margin-bottom: 20px;
-    user-select: none;
-    z-index: 1;
+    font-size: 20px;
   }
   #board {
     display: grid;
     grid-template-columns: repeat(3, 100px);
-    grid-template-rows: repeat(3, 100px);
     gap: 10px;
-    z-index: 1;
   }
   .cell {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-    font-size: 72px;
+    width: 100px;
+    height: 100px;
+    background: white;
+    color: black;
+    font-size: 48px;
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
+    border-radius: 10px;
     cursor: pointer;
-    transition: background-color .3s ease;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-    user-select: none;
-  }
-  .cell:hover {
-    background-color: #f0f8ff;
   }
   .cell.disabled {
-    cursor: default;
-    background-color: #d6eaff;
+    pointer-events: none;
+    background-color: #ccc;
   }
   #message {
-    margin-top: 40px;
-    color: #fff;
-    font-size: 26px;
-    font-weight: 600;
-    min-height: 32px;
-    user-select: none;
-    z-index: 1;
+    margin-top: 20px;
+    font-size: 24px;
   }
-  #countdown {
-    color: #fff;
-    font-size: 26px;
-    font-weight: 600;
-    user-select: none;
-    min-width: 24px;
-    text-align: left;
-  }
-  #fireworksCanvas {
+  canvas {
     position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    top: 0;
+    left: 0;
     pointer-events: none;
+    width: 100vw;
+    height: 100vh;
     z-index: 10;
   }
 </style>
 </head>
 <body>
-<div id="loaderScreen">O'yin yuklanmoqda...<div class="spinner"></div></div>
 
-<div id="scoreboard">O'yinchi ❌: 0  |  Bot ⭕: 0  |  Duranglar: 0</div>
-
+<div id="scoreboard">O'yinchi ❌: 0 | Bot ⭕: 0 | Durang: 0</div>
 <div id="board"></div>
 <div id="message">Navbat: ❌</div>
-<div id="countdown"></div>
-
 <canvas id="fireworksCanvas"></canvas>
+
 <script>
-window.onload = () => {
-  setTimeout(() => {
-    document.getElementById('loaderScreen').style.display = 'none';
-    createBoard();
-  }, 2500);
-};
+const boardElement = document.getElementById("board");
+const messageElement = document.getElementById("message");
+const scoreboardElement = document.getElementById("scoreboard");
+const canvas = document.getElementById("fireworksCanvas");
+const ctx = canvas.getContext("2d");
 
-const boardElement = document.getElementById('board');
-const messageElement = document.getElementById('message');
-const countdownElement = document.getElementById('countdown');
-const scoreboard = document.getElementById('scoreboard');
-const canvas = document.getElementById('fireworksCanvas');
-const ctx = canvas.getContext('2d');
-
-let board = ['', '', '', '', '', '', '', '', ''];
-let currentPlayer = '❌';
+let board = Array(9).fill("");
+let currentPlayer = "❌";
 let gameActive = true;
+let playerWins = 0, botWins = 0, draws = 0;
 let fireworks = [];
 let animationId;
-let playerWins = 0;
-let botWins = 0;
-let draws = 0;
 
-const winningConditions = [
+const winCombos = [
   [0,1,2],[3,4,5],[6,7,8],
   [0,3,6],[1,4,7],[2,5,8],
   [0,4,8],[2,4,6]
@@ -134,20 +89,20 @@ function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 }
-window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
 class FireworkParticle {
-  constructor(x,y,color){
+  constructor(x, y, color) {
     this.x = x;
     this.y = y;
     this.color = color;
-    this.radius = Math.random()*3 + 2;
-    this.speedX = (Math.random()-0.5)*6;
-    this.speedY = (Math.random()-0.5)*6;
+    this.radius = Math.random() * 3 + 2;
+    this.speedX = (Math.random() - 0.5) * 6;
+    this.speedY = (Math.random() - 0.5) * 6;
     this.alpha = 1;
     this.gravity = 0.05;
-    this.decay = 0.015 + Math.random()*0.015;
+    this.decay = 0.01 + Math.random() * 0.02;
   }
   update() {
     this.speedY += this.gravity;
@@ -160,31 +115,26 @@ class FireworkParticle {
     ctx.globalAlpha = this.alpha;
     ctx.fillStyle = this.color;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, 2*Math.PI);
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 }
 
 function createFireworks(x, y) {
-  const colors = ['#ff4757','#ffa502','#1e90ff','#2ed573','#ff6b81','#3742fa'];
-  for(let i=0; i<60; i++){
-    const color = colors[Math.floor(Math.random()*colors.length)];
+  const colors = ["#ff4757", "#ffa502", "#1e90ff", "#2ed573", "#ff6b81", "#3742fa"];
+  for (let i = 0; i < 60; i++) {
+    const color = colors[Math.floor(Math.random() * colors.length)];
     fireworks.push(new FireworkParticle(x, y, color));
   }
 }
 
 function animateFireworks() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for(let i = fireworks.length - 1; i >= 0; i--){
-    const p = fireworks[i];
-    p.update();
-    p.draw();
-    if(p.alpha <= 0){
-      fireworks.splice(i,1);
-    }
-  }
-  if(fireworks.length > 0){
+  fireworks.forEach(p => p.update());
+  fireworks.forEach(p => p.draw());
+  fireworks = fireworks.filter(p => p.alpha > 0);
+  if (fireworks.length > 0) {
     animationId = requestAnimationFrame(animateFireworks);
   } else {
     cancelAnimationFrame(animationId);
@@ -192,190 +142,133 @@ function animateFireworks() {
 }
 
 function showFireworks() {
-  createFireworks(window.innerWidth/2, window.innerHeight/2);
+  createFireworks(window.innerWidth / 2, window.innerHeight / 2);
   animateFireworks();
 }
 
-function createBoard() {
-  boardElement.innerHTML = '';
-  board.forEach((cell, index) => {
-    const cellDiv = document.createElement('div');
-    cellDiv.classList.add('cell');
-    cellDiv.dataset.index = index;
-    cellDiv.textContent = cell;
-    if(cell !== '') cellDiv.classList.add('disabled');
-    cellDiv.addEventListener('click', onCellClick);
-    boardElement.appendChild(cellDiv);
+function drawBoard() {
+  boardElement.innerHTML = "";
+  board.forEach((cell, i) => {
+    const div = document.createElement("div");
+    div.className = "cell" + (cell ? " disabled" : "");
+    div.textContent = cell;
+    div.dataset.index = i;
+    div.addEventListener("click", onCellClick);
+    boardElement.appendChild(div);
   });
 }
 
 function onCellClick(e) {
-  const index = e.target.dataset.index;
-  if(!gameActive || board[index] !== '' || currentPlayer === '⭕') return;
-  board[index] = currentPlayer;
-  updateBoard();
-  checkResult();
-  if(gameActive && currentPlayer === '⭕'){
+  const i = +e.target.dataset.index;
+  if (!gameActive || board[i] !== "") return;
+
+  board[i] = currentPlayer;
+  updateGame();
+
+  if (gameActive && currentPlayer === "⭕") {
     setTimeout(botMove, 500);
   }
 }
 
-function updateBoard() {
-  document.querySelectorAll('.cell').forEach(cell => {
-    const idx = cell.dataset.index;
-    cell.textContent = board[idx];
-    if(board[idx] !== '') cell.classList.add('disabled');
-    else cell.classList.remove('disabled');
-  });
-}
+function updateGame() {
+  drawBoard();
+  const winner = getWinner();
 
-function updateScoreboard() {
-  scoreboard.textContent = `O'yinchi ❌: ${playerWins}  |  Bot ⭕: ${botWins}  |  Duranglar: ${draws}`;
-}
-
-function checkResult() {
-  let roundWon = false;
-  for(const condition of winningConditions){
-    const [a,b,c] = condition;
-    if(board[a] === '' || board[b] === '' || board[c] === '') continue;
-    if(board[a] === board[b] && board[b] === board[c]){
-      roundWon = true;
-      break;
-    }
-  }
-  if(roundWon){
-    messageElement.textContent = `G'olib: ${currentPlayer}! 🎉`;
+  if (winner) {
+    messageElement.textContent = `G'olib: ${winner} 🎉`;
     gameActive = false;
-    highlightWinningCells();
     showFireworks();
-
-    if(currentPlayer === '❌') playerWins++;
-    else if(currentPlayer === '⭕') botWins++;
-
-    updateScoreboard();
-
-    startCountdownAndRestart();
-
-    return;
-  }
-  if(!board.includes('')){
-    messageElement.textContent = 'Durang! 🤝';
-    gameActive = false;
+    if (winner === "❌") playerWins++;
+    else botWins++;
+    updateScore();
+    setTimeout(resetGame, 2500);
+  } else if (!board.includes("")) {
+    messageElement.textContent = "Durang! 🤝";
     draws++;
-    updateScoreboard();
-
-    startCountdownAndRestart();
-
-    return;
-  }
-  currentPlayer = currentPlayer === '❌' ? '⭕' : '❌';
-  messageElement.textContent = `Navbat: ${currentPlayer}`;
-  countdownElement.textContent = '';
-}
-
-function highlightWinningCells() {
-  for(const condition of winningConditions){
-    const [a,b,c] = condition;
-    if(board[a] !== '' && board[a] === board[b] && board[b] === board[c]){
-      document.querySelector(`.cell[data-index="${a}"]`).style.backgroundColor = '#90ee90';
-      document.querySelector(`.cell[data-index="${b}"]`).style.backgroundColor = '#90ee90';
-      document.querySelector(`.cell[data-index="${c}"]`).style.backgroundColor = '#90ee90';
-    }
+    updateScore();
+    gameActive = false;
+    setTimeout(resetGame, 2500);
+  } else {
+    currentPlayer = currentPlayer === "❌" ? "⭕" : "❌";
+    messageElement.textContent = `Navbat: ${currentPlayer}`;
   }
 }
 
-function startCountdownAndRestart() {
-  let timeLeft = 2;
-  countdownElement.textContent = timeLeft;
-  clearInterval(window.countdownInterval);
-  window.countdownInterval = setInterval(() => {
-    timeLeft--;
-    if(timeLeft <= 0){
-      clearInterval(window.countdownInterval);
-      countdownElement.textContent = '';
-      restartGame();
-    } else {
-      countdownElement.textContent = timeLeft;
+function getWinner() {
+  for (const [a, b, c] of winCombos) {
+    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+      return board[a];
     }
-  }, 1000);
+  }
+  return null;
 }
 
-function restartGame() {
-  board = ['', '', '', '', '', '', '', '', ''];
-  currentPlayer = '❌';
+function updateScore() {
+  scoreboardElement.textContent = `O'yinchi ❌: ${playerWins} | Bot ⭕: ${botWins} | Durang: ${draws}`;
+}
+
+function resetGame() {
+  board = Array(9).fill("");
+  currentPlayer = "❌";
   gameActive = true;
-  messageElement.textContent = `Navbat: ${currentPlayer}`;
-  countdownElement.textContent = '';
-  createBoard();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  messageElement.textContent = "Navbat: ❌";
+  drawBoard();
   fireworks = [];
-  cancelAnimationFrame(animationId);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-// Bot harakati (70% g'alaba imkoniyati bilan)
 function botMove() {
   if (!gameActive) return;
 
-  function findWinningMove(player) {
-    for (const condition of winningConditions) {
-      const [a, b, c] = condition;
+  // 90% умный ход
+  if (Math.random() < 0.9) {
+    // Победа
+    for (const [a, b, c] of winCombos) {
       const line = [board[a], board[b], board[c]];
-      if (line.filter(cell => cell === player).length === 2 && line.includes('')) {
-        return condition[line.indexOf('')];
+      if (line.filter(x => x === "⭕").length === 2 && line.includes("")) {
+        const move = [a, b, c][line.indexOf("")];
+        board[move] = "⭕";
+        updateGame();
+        return;
       }
     }
-    return null;
-  }
 
-  const randomChance = Math.random();
+    // Блок игрока
+    for (const [a, b, c] of winCombos) {
+      const line = [board[a], board[b], board[c]];
+      if (line.filter(x => x === "❌").length === 2 && line.includes("")) {
+        const move = [a, b, c][line.indexOf("")];
+        board[move] = "⭕";
+        updateGame();
+        return;
+      }
+    }
 
-  // 70% imkoniyat: g'alaba qilish yoki blok qilish uchun mukammal harakat
-  if (randomChance < 0.7) {
-    let move = findWinningMove('⭕');
-    if (move !== null) {
-      board[move] = '⭕';
-      updateBoard();
-      checkResult();
+    // Центр
+    if (board[4] === "") {
+      board[4] = "⭕";
+      updateGame();
       return;
     }
-    move = findWinningMove('❌');
-    if (move !== null) {
-      board[move] = '⭕';
-      updateBoard();
-      checkResult();
-      return;
-    }
-  }
 
-  // 20% imkoniyat: markazni egallash, agar bo'sh bo'lsa
-  if (randomChance >= 0.7 && randomChance < 0.9) {
-    if (board[4] === '') {
-      board[4] = '⭕';
-      updateBoard();
-      checkResult();
+    // Угол
+    const corners = [0, 2, 6, 8].filter(i => board[i] === "");
+    if (corners.length) {
+      const move = corners[Math.floor(Math.random() * corners.length)];
+      board[move] = "⭕";
+      updateGame();
       return;
     }
   }
 
-  // 10% imkoniyat: burchaklardan birini egallash, agar markaz band bo'lsa
-  const corners = [0, 2, 6, 8].filter(i => board[i] === '');
-  if (corners.length > 0 && randomChance >= 0.9) {
-    const corner = corners[Math.floor(Math.random() * corners.length)];
-    board[corner] = '⭕';
-    updateBoard();
-    checkResult();
-    return;
-  }
-
-  // Aks holda, tasodifiy harakat
-  const emptyIndices = board.map((val, idx) => val === '' ? idx : -1).filter(idx => idx !== -1);
-  if (emptyIndices.length === 0) return;
-  const randomIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-  board[randomIndex] = '⭕';
-  updateBoard();
-  checkResult();
+  // Случайный
+  const empty = board.map((v, i) => v === "" ? i : null).filter(v => v !== null);
+  const move = empty[Math.floor(Math.random() * empty.length)];
+  board[move] = "⭕";
+  updateGame();
 }
 
+drawBoard();
 </script>
 </body>
 </html>
